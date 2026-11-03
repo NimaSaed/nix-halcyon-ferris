@@ -1,0 +1,35 @@
+DT_COMPAT_ZMK_INPUT_PROCESSOR_XY_PACK := zmk,input-processor-xy-pack
+DT_COMPAT_ZMK_INPUT_PROCESSOR_XY_UNPACK := zmk,input-processor-xy-unpack
+
+config ZMK_INPUT_PROCESSOR_XY_PACK
+    bool "Input processor: pack a packet's REL_X/REL_Y into one event (split peripheral)"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_INPUT_PROCESSOR_XY_PACK))
+    depends on ZMK_POINTING
+
+config ZMK_INPUT_PROCESSOR_XY_UNPACK
+    bool "Input processor: unpack a packed X/Y event back into REL_X/REL_Y (split central)"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_INPUT_PROCESSOR_XY_UNPACK))
+    depends on ZMK_POINTING
+
+config ZMK_INPUT_PROCESSOR_XY_PACK_STATS
+    bool "Log one packet/gap summary per second of touchpad traffic (both processors)"
+    depends on ZMK_INPUT_PROCESSOR_XY_PACK || ZMK_INPUT_PROCESSOR_XY_UNPACK
+    default n
+    help
+      Each processor counts the packets it sees and the gaps between them
+      and logs "xy_pack: N pkts in M ms, ..." (right half) or "xy_unpack:
+      ..." (dongle) at INFO level under its own log module, so ZMK's own
+      level can stay at WRN. Comparing the two logs shows whether a stall
+      originates at the chip (both sides see the gap) or on the link / in a
+      queue (only the dongle sees it).
+
+config ZMK_INPUT_PROCESSOR_XY_PACK_TRACE
+    bool "Log every packet on the split peripheral (dx, dy, gap) at INFO level"
+    depends on ZMK_INPUT_PROCESSOR_XY_PACK
+    default n
+    help
+      One line per packet from zip_xy_pack: "xy_pack: dx=.. dy=.. gap=..ms".
+      About 100 lines/s while the finger moves, enough to saturate the USB
+      console for long; meant for short controlled gestures (a straight
+      stroke, a held finger) where the input is known and any hole, sign
+      reversal or axis dropout in the output must be the chip's.

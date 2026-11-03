@@ -4,9 +4,63 @@
  * Taps off: the chip's tap-to-click also brings its tap-and-drag gesture,
  * which turned short strokes into clicks and drags. With taps disabled the
  * pad only moves the cursor; click and drag with the MB1/MB2/MB3 keys on the
- * Mouse layer (hold MB1 and move to drag).
+ * Mouse layer (hold MB1 and move to drag). It also makes every packet two
+ * input events (REL_X, REL_Y+sync) instead of three.
+ *
+ * &zip_xy_pack (in-repo module, modules/xy-pack): runs on this half before
+ * the events are handed to the split transport and folds the two events of
+ * a packet into one, so the radio carries one notification per packet
+ * (100/s at most) instead of two. Packets without movement are dropped. The
+ * dongle unpacks them with &zip_xy_unpack (halcyon_ferris_dongle.overlay);
+ * flash both parts together.
+ *
+ * Touch sensitivity: the Pinnacle's ADC attenuation, "1x" the most
+ * sensitive, "4x" the least; splitkb's shield sets "2x". Under test: at
+ * "2x" the logs show the chip losing a finger that is on the pad for
+ * 100-450 ms at a time, several times a second during ordinary use (holes
+ * identical on both sides of the link), and the deltas around those holes
+ * come out reversed or single-axis. "1x" halves the signal a touch needs;
+ * if the cursor starts reacting to a hovering finger or the palm, go back.
  */
 
 &trackpad {
     /delete-property/ primary-tap-enable;
+    sensitivity = "1x";
+};
+
+/ {
+    zip_xy_pack: zip_xy_pack {
+        compatible = "zmk,input-processor-xy-pack";
+        #input-processor-cells = <0>;
+        /* Landing filter (see modules/xy-pack/README.md). Measured on this
+         * pad: in the first 30-100 ms after the finger lands the chip reports
+         * a hump of upward motion, 45-55 counts on a normal touch and up to
+         * 104 on a firm one (x2 on the dongle = 90-200 px), before the stroke
+         * starts; downward and sideways motion at landing is real. So only
+         * the upward component is limited, to 1 count per packet for the
+         * first 8 packets of a stroke: a nudge still passes, a hard landing
+         * cannot move the cursor more than ~15 counts. landing-packets = <0>
+         * turns it off. */
+        landing-packets = <8>;
+        landing-gap-ms = <150>;
+        landing-max-up = <1>;
+    };
+};
+
+&trackpad_split {
+    input-processors = <&zip_xy_pack>;
+};
+
+/* USB serial console for CONFIG_ZMK_USB_LOGGING (see halcyon_ferris_right.conf);
+ * the halcyon_wireless board does not define one. Harmless when logging is off. */
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart;
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart: cdc_acm_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
 };

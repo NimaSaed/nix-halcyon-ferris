@@ -1,0 +1,10 @@
+description: |
+  Split-central input processor that turns the event produced by
+  `zmk,input-processor-xy-pack` on the peripheral back into REL_X and REL_Y.
+  Must be the first processor in every chain (base and layer overrides) of
+  the input listener. Passes everything else through, so it is harmless if
+  the peripheral does not pack.
+
+compatible: "zmk,input-processor-xy-unpack"
+
+include: ip_zero_param.yaml

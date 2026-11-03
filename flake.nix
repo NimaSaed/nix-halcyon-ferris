@@ -21,6 +21,12 @@
 
         src = nixpkgs.lib.sourceFilesBySuffices self [ ".board" ".cmake" ".conf" ".defconfig" ".dts" ".dtsi" ".json" ".keymap" ".overlay" ".shield" ".yml" "_defconfig" ".c" ".h" ".yaml" "CMakeLists.txt" "Kconfig" ];
 
+        # In-repo ZMK modules (modules/<name>, each a Zephyr module with its own
+        # zephyr/module.yml). xy-pack: the &zip_xy_pack / &zip_xy_unpack input
+        # processors that send one BLE notification per touchpad packet (and
+        # the landing filter); pinnacle-tune: Cirque registers Zephyr's driver
+        # does not expose (edge sensitivity, compensation bits).
+        extraCmakeFlags = [ "-DZMK_EXTRA_MODULES=${src}/modules/xy-pack;${src}/modules/pinnacle-tune" ];
 
         # Three parts: the dongle is the central (USB/BT host), both halves are
         # peripherals. The left half additionally needs CONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
@@ -47,7 +53,7 @@
           right  = "halcyon_ferris_right mod_battery_coincell mod_cirque_hw_right";
         };
 
-        zephyrDepsHash = "sha256-uXZ4lU8NZNt+tcVW+jLWQBaMLsqopVLb3EvW7RAFEF8=";
+        zephyrDepsHash = "sha256-79OugfKZjMurv5Mq7s0dUypYI8z7Z4q8bWG6WNSBE84=";
 
         meta = {
           description = "ZMK firmware for the Halcyon Ferris";

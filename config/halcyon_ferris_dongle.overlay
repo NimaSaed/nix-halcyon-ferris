@@ -5,6 +5,11 @@
  * &trackpad_listener (from the splitkb mod_cirque_central shield) turns
  * them into mouse movement.
  *
+ * - &zip_xy_unpack (in-repo module, modules/xy-pack) must be the first
+ *   processor of every chain: the right half sends each packet as one
+ *   packed event (halcyon_ferris_right.overlay, &zip_xy_pack) and this
+ *   restores REL_X / REL_Y for the processors after it. Flash both parts
+ *   together; without the pack on the right half it does nothing.
  * - Cursor speed: `&zip_xy_scaler <mul> <div>` multiplies every packet
  *   (2 1 = double, 3 2 = 1.5x). The host's own acceleration applies on top.
  * - Auto mouse layer: `&zip_temp_layer <layer> <timeout-ms>` switches the
@@ -21,17 +26,38 @@
 
 #include <input/processors.dtsi>
 
+/* USB serial console for CONFIG_ZMK_USB_LOGGING (see halcyon_ferris_dongle.conf);
+ * the halcyon_dongle board does not define one. Harmless when logging is off. */
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart;
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart: cdc_acm_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
+/ {
+    zip_xy_unpack: zip_xy_unpack {
+        compatible = "zmk,input-processor-xy-unpack";
+        #input-processor-cells = <0>;
+    };
+};
+
 &zip_temp_layer {
     require-prior-idle-ms = <300>;           /* not while typing */
     excluded-positions = <12 13 14 2 3 11 23 24>;  /* D F G (buttons), E R (scroll), S (pad scroll), V B (fwd/back) */
 };
 
 &trackpad_listener {
-    input-processors = <&zip_xy_scaler 2 1 &zip_temp_layer 4 600>;
+    input-processors = <&zip_xy_unpack &zip_xy_scaler 2 1 &zip_temp_layer 4 600>;
 
     scroller {
         layers = <5>;
-        input-processors = <&zip_xy_to_scroll_mapper>;
+        input-processors = <&zip_xy_unpack &zip_xy_to_scroll_mapper>;
         process-next;
     };
 };

@@ -4,6 +4,8 @@
 /zmk
 /modules/*
 !/modules/drag-lock/
+!/modules/xy-pack/
+!/modules/pinnacle-tune/
 /build
 
 # nix build outputs

@@ -1,0 +1,54 @@
+menuconfig PINNACLE_TUNE
+    bool "Tune the Cirque Pinnacle beyond what Zephyr's driver exposes"
+    depends on INPUT_PINNACLE && SPI
+    default n
+    help
+      Runs once after the cirque,pinnacle driver's init: pauses the feed,
+      writes the registers selected below over the same SPI bus, optionally
+      forces a calibration, re-enables the feed, and logs the register
+      values before and after. Only the node labelled `trackpad` on SPI is
+      handled.
+
+if PINNACLE_TUNE
+
+config PINNACLE_TUNE_EDGE_SENSITIVITY
+    bool "Edge sensitivity: write the WideZ-min registers (ERA 0x0149 / 0x0168)"
+    default n
+    help
+      The values Cirque's sample code uses for curved overlays ("tune edge
+      sensitivity"): lower than the chip's defaults (0x06 / 0x05), so a
+      lighter finger stays detected near the rim.
+
+config PINNACLE_TUNE_EDGE_X_WIDEZMIN
+    hex "X axis WideZ-min (ERA 0x0149)"
+    depends on PINNACLE_TUNE_EDGE_SENSITIVITY
+    default 0x04
+
+config PINNACLE_TUNE_EDGE_Y_WIDEZMIN
+    hex "Y axis WideZ-min (ERA 0x0168)"
+    depends on PINNACLE_TUNE_EDGE_SENSITIVITY
+    default 0x03
+
+config PINNACLE_TUNE_CALCONFIG1_CLEAR
+    hex "CalConfig1 (0x07) bits to clear"
+    default 0x00
+    help
+      0x02 background compensation, 0x04 NERD compensation, 0x08 track
+      error compensation, 0x10 tap compensation, 0x20 palm error
+      compensation (all enabled by default in the chip). 0 leaves the
+      register alone.
+
+config PINNACLE_TUNE_FEEDCONFIG3_SET
+    hex "FeedConfig3 (0x06) bits to set"
+    default 0x00
+    help
+      0x02 disable cross-rate smoothing, 0x04 disable palm/NERD measurement,
+      0x08 disable noise avoidance, 0x10 disable wrap lockout, 0x20 disable
+      dynamic EMI adjust (all features enabled by default in the chip). 0
+      leaves the register alone.
+
+config PINNACLE_TUNE_CALIBRATE
+    bool "Force a calibration after the changes"
+    default y
+
+endif # PINNACLE_TUNE

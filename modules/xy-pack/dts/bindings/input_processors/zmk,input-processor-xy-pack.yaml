@@ -1,0 +1,63 @@
+description: |
+  Split-peripheral input processor (put it in the `input-processors` of the
+  `zmk,input-split` node) that folds a relative pointing packet's REL_X and
+  REL_Y into one event, halving the number of BLE notifications the split
+  transport sends. The central must run `zmk,input-processor-xy-unpack`
+  first in every chain of its input listener.
+
+  Landing filter: a Cirque Pinnacle in relative mode reports a hump of
+  motion in the first ~100 ms after the finger lands (the contact patch
+  settling), 40-100 counts on this pad, always in the same direction
+  (negative Y, i.e. up), before the stroke itself starts. The filter limits
+  the per-packet delta in the first `landing-packets` packets of every new
+  stroke (a packet after at least `landing-gap-ms` of silence) to
+  `landing-max-up` / `landing-max-down` / `landing-max-x` counts. Motion
+  that is genuinely small (a nudge) passes unchanged. At the end of the
+  window the raw motion of its last two packets, compared with that of
+  packets 3-4, tells a hump (peaked early, decayed) from a real stroke in
+  the limited direction (still rising or sustained): for a stroke the
+  withheld counts are paid back over the next `landing-refund-packets`
+  packets, so it loses nothing.
+
+compatible: "zmk,input-processor-xy-pack"
+
+include: ip_zero_param.yaml
+
+properties:
+  landing-packets:
+    type: int
+    default: 8
+    description: |
+      Number of packets after a new touch during which the limits apply.
+      0 disables the filter.
+  landing-gap-ms:
+    type: int
+    default: 150
+    description: |
+      A packet arriving this long after the previous one starts a new stroke
+      (relative mode is silent while the finger rests, so this also catches a
+      resting finger that moves again; the limits are harmless there).
+  landing-max-up:
+    type: int
+    default: 1
+    description: Largest negative Y (up) per packet during the landing window.
+  landing-max-down:
+    type: int
+    default: 1000
+    description: Largest positive Y (down) per packet during the landing window.
+  landing-max-x:
+    type: int
+    default: 1000
+    description: Largest |X| per packet during the landing window.
+  landing-refund-threshold:
+    type: int
+    default: 6
+    description: |
+      Floor for the raw |dx|+|dy| summed over the last two packets of the
+      window; the touch counts as a real stroke (withheld motion paid back)
+      when that sum is at least this and at least the same sum over packets
+      3-4 (i.e. the motion did not decay). 0 never refunds.
+  landing-refund-packets:
+    type: int
+    default: 4
+    description: Packets over which the withheld motion is paid back. 0 disables refunds.

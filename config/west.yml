@@ -31,6 +31,6 @@ manifest:
     # Board (halcyon_wireless) + shield (halcyon_ferris, mod_battery_*) definitions
     - name: zmk-halcyon-module
       remote: splitkb
-      revision: a83eaa492a678ed12fb5feabc62426dc1ed3a3cb  # main
+      revision: 2af6327984010bd89fd94f082f715f671ea057d7  # main
   self:
     path: config
