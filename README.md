@@ -1,4 +1,4 @@
-# zmk-nix — Halcyon Ferris firmware
+# nix-halcyon-ferris — Halcyon Ferris firmware
 
 ZMK firmware for my [splitkb Halcyon Ferris](https://splitkb.com/products/halcyon-ferris),
 built reproducibly with Nix via [zmk-nix](https://github.com/lilyinstarlight/zmk-nix).

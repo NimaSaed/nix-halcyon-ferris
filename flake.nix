@@ -1,5 +1,5 @@
 {
-  description = "ZMK firmware for my splitkb Halcyon Ferris (ported from my ZSA Voyager layout)";
+  description = "My splitkb Halcyon Ferris: ZMK firmware for the wireless and the wired one, built and flashed with Nix";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
