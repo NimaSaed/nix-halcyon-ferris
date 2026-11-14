@@ -20,7 +20,7 @@
 
       # Hash of the west workspace (config/west.yml); `nix run .#update` after
       # changing the pins there.
-      zephyrDepsHash = "sha256-79OugfKZjMurv5Mq7s0dUypYI8z7Z4q8bWG6WNSBE84=";
+      zephyrDepsHash = "sha256-AiMZ3KJQBdo/MT+xYT8B8FTYx/hEoMH2AQATrxGD3b0=";
     in rec {
       default = firmware;
 
