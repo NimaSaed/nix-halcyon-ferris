@@ -134,21 +134,139 @@
 
       flash = zmk-nix.packages.${system}.flash.override { inherit firmware; };
 
-      # zmk-nix's flasher looks for a SCSI disk whose model is "nRF UF2" and
-      # mounts that disk: the nRF bootloader puts its FAT straight on the
-      # device. The RP2040 bootloader (model "RP2") has a partition table
-      # instead, the FAT is on /dev/sdX1, so mounting the disk fails forever.
-      # Patch the detection to find the partition by its filesystem label.
+      # Flasher for the wired controllers, `nix run .#flash-wired [left|right]`
+      # (no argument: both, one after the other). Same usage and flow as
+      # zmk-nix's flasher above, but its own script because that one does not
+      # work here, for two reasons:
+      #  - it looks for a SCSI disk whose model is "nRF UF2" and mounts that
+      #    disk, since the nRF bootloader puts its FAT straight on the device.
+      #    The RP2040 bootloader has a partition table instead, the FAT is on
+      #    /dev/sdX1; find that by its filesystem label.
+      #  - it mounts with udisksctl, which it does not ship and which is of no
+      #    use without the udisks2 daemon anyway (services.udisks2 on NixOS),
+      #    and hides the error: without udisks it waits for a mount forever.
+      #    Use udisks when it is running, otherwise mount the partition
+      #    ourselves with sudo.
       flash-wired = let
         pkgs = nixpkgs.legacyPackages.${system};
-        nrf = zmk-nix.packages.${system}.flash.override { firmware = firmware-wired; };
-      in pkgs.runCommand "zmk-uf2-flash" { meta.mainProgram = "zmk-uf2-flash"; } ''
-        mkdir -p $out/bin
-        sed "s#lsblk -Sno path,model | grep -F 'nRF UF2'#lsblk -lno path,label | grep -Fw 'RPI-RP2'#" \
-          ${nrf}/bin/zmk-uf2-flash > $out/bin/zmk-uf2-flash
-        grep -q "RPI-RP2" $out/bin/zmk-uf2-flash   # fail the build if zmk-nix changed the line
-        chmod +x $out/bin/zmk-uf2-flash
-      '';
+      in pkgs.writeShellApplication {
+        name = "zmk-uf2-flash-wired";
+        runtimeInputs = [ pkgs.util-linux pkgs.coreutils ];
+        text = ''
+          firmware=${firmware-wired}
+          parts=(${toString firmware-wired.parts})
+
+          available() {
+            lsblk -lno path,label | grep -Fw 'RPI-RP2' | cut -d' ' -f1
+          }
+
+          mounted() {
+            findmnt "$device" -no target
+          }
+
+          # The daemon, not just the udisksctl binary. udisks unmounts by itself
+          # when the board reboots after the copy.
+          use_udisks=""
+          if udisksctl status >/dev/null 2>&1; then
+            use_udisks=1
+          fi
+
+          # Our own mount when there is no udisks: a temporary directory, owned
+          # by us so that cp works, with vfat's `flush` (as udisks mounts) so
+          # that the file is on the device when cp returns. The bootloader
+          # reboots as soon as it has the last block of the UF2.
+          ours=""
+          mount_ours() {
+            ours="$(mktemp -d --tmpdir zmk-flash.XXXXXX)"
+            if sudo mount -o "uid=$(id -u),gid=$(id -g),flush" "$device" "$ours"; then
+              return 0
+            fi
+            rmdir "$ours"
+            ours=""
+            return 1
+          }
+
+          unmount_ours() {
+            [ -n "$ours" ] || return 0
+            sudo umount "$ours" 2>/dev/null || sudo umount -l "$ours" || true
+            rmdir "$ours" 2>/dev/null || true
+            ours=""
+          }
+
+          flash=("$@")
+          if [ "''${#flash[@]}" -eq 0 ]; then
+            flash=("''${parts[@]}")
+          else
+            for part in "''${flash[@]}"; do
+              if ! printf '%s\0' "''${parts[@]}" | grep -Fxqz -- "$part"; then
+                echo "The '$part' part does not exist in the firmware '${firmware-wired.name}'"
+                exit 1
+              fi
+            done
+          fi
+
+          # Without udisks we mount with sudo: ask for the password now, before
+          # the keyboard is in its bootloader, not in the middle of flashing.
+          if [ -z "$use_udisks" ]; then
+            echo "udisks is not running; the device will be mounted with sudo."
+            sudo -v
+          fi
+
+          for part in "''${flash[@]}"; do
+            echo -n "Double tap reset and plug in the '$part' part of the keyboard via USB"
+            while ! device="$(available)"; do
+              # Keep sudo's cached credentials from expiring while we wait
+              # (non-interactive: never prompts here).
+              [ -n "$use_udisks" ] || sudo -n -v 2>/dev/null || true
+              echo -n .
+              sleep 1
+            done
+            echo
+            echo "Found device at $device"
+
+            if [ -n "$use_udisks" ]; then
+              echo "Mounting the device with udisks."
+            else
+              echo "Mounting the device with sudo."
+              # Once, not in the loop below: no sudo prompt every second.
+              mount_ours || echo "Could not mount $device; mount it manually anywhere you prefer."
+            fi
+            echo -n "Waiting for mount "
+
+            while ! mountpoint="$(mounted)"; do
+              if [ -n "$use_udisks" ]; then
+                # Retried every second: udisks may not have probed the new
+                # device yet.
+                udisksctl mount --block-device "$device" >/dev/null 2>&1 && continue
+              fi
+              echo -n .
+              sleep 1
+            done
+            echo
+            echo "Found mountpoint at $mountpoint"
+
+            cp "$firmware/zmk_$part.uf2" "$mountpoint"
+            sync -f "$mountpoint" 2>/dev/null || true
+            echo "Firmware copy complete."
+
+            sleep 1
+            unmount_ours
+
+            if mounted >/dev/null && available >/dev/null; then
+              echo -n "Please unmount the mass storage device at $device and disconnect the '$part' part of the keyboard via USB"
+              while mounted >/dev/null && available >/dev/null; do
+                echo -n .
+                sleep 3
+              done
+            fi
+            echo
+          done
+        '';
+        meta = firmware.meta // {
+          description = "UF2 flasher for the wired Halcyon Ferris";
+          platforms = nixpkgs.lib.platforms.linux;
+        };
+      };
 
       update = zmk-nix.packages.${system}.update;
     });
