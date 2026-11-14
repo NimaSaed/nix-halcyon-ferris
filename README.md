@@ -141,6 +141,12 @@ What differs from the wireless build, and why:
 - `config/halcyon_ferris_right_halcyon_wired.conf` repeats the
   `CONFIG_PINNACLE_TUNE_*` block (same pad, same values); none of the BLE
   buffer tuning applies;
+- `config/halcyon_ferris_left_halcyon_wired.conf`: the e-paper is updated
+  within 100 ms of a change (`CONFIG_ZMK_DISPLAY_TICK_PERIOD_MS`, splitkb's
+  shield uses 1000 ms, so a layer change could lag by up to a second); the
+  panel's own partial refresh, a few hundred ms from the LUT in splitkb's
+  devicetree, is the floor. The wireless left half is a peripheral and shows
+  no layer, so it keeps splitkb's value;
 - `config/halcyon_ferris_left_halcyon_wired.conf`: ZMK's built-in status
   screen on the e-paper (layer name, words per minute) for now, because
   splitkb's widget (artwork, battery gauge, BLE profile circles) is written
