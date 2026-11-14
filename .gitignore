@@ -6,6 +6,7 @@
 !/modules/drag-lock/
 !/modules/xy-pack/
 !/modules/pinnacle-tune/
+!/modules/epaper-layers/
 /build
 
 # nix build outputs

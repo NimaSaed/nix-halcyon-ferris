@@ -81,9 +81,11 @@
         inherit src zephyrDepsHash;
         inherit (firmware) westDeps;   # same west.yml, reuse the fetched deps
 
-        # pinnacle-tune only: xy-pack exists to save BLE notifications and the
-        # wired split does not need it.
-        extraCmakeFlags = [ "-DZMK_EXTRA_MODULES=${src}/modules/pinnacle-tune" ];
+        # pinnacle-tune as on the wireless right half; epaper-layers: the
+        # left half's e-paper status screen (a column of the layers with a
+        # dot at the active one; see the module's README). No xy-pack: it
+        # exists to save BLE notifications and the wired split does not need it.
+        extraCmakeFlags = [ "-DZMK_EXTRA_MODULES=${src}/modules/pinnacle-tune;${src}/modules/epaper-layers" ];
 
         parts = [ "left" "right" ];
         centralPart = "left";
@@ -96,6 +98,9 @@
         # No battery boards on the wired controllers. mod_cirque_central on the
         # left is the receiving end of the right half's touchpad (as on the
         # dongle); see config/halcyon_ferris_left_halcyon_wired.overlay.
+        # mod_display_epaper_forest brings the panel's driver and LVGL setup;
+        # its own status widget is switched off in favour of epaper-layers
+        # (config/halcyon_ferris_left_halcyon_wired.conf).
         shield = {
           left  = "halcyon_ferris_left mod_display_epaper_forest mod_cirque_central";
           right = "halcyon_ferris_right mod_cirque_hw_right";

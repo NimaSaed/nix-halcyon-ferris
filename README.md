@@ -147,15 +147,20 @@ What differs from the wireless build, and why:
   panel's own partial refresh, a few hundred ms from the LUT in splitkb's
   devicetree, is the floor. The wireless left half is a peripheral and shows
   no layer, so it keeps splitkb's value;
-- `config/halcyon_ferris_left_halcyon_wired.conf`: ZMK's built-in status
-  screen on the e-paper (layer name, words per minute) for now, because
-  splitkb's widget (artwork, battery gauge, BLE profile circles) is written
-  for the wireless board and does not compile without Bluetooth and a
-  battery (`widgets/status.c` calls `zmk_ble_*` and
-  `zmk_battery_state_of_charge` and uses `CONFIG_BT_MAX_PAIRED` unguarded).
-  Known flaw: the panel is mounted a quarter turn off and the built-in
-  screen does not know, so its text runs sideways;
-- in-repo modules: only `pinnacle-tune` is passed to the wired build.
+- `modules/epaper-layers/` (in-repo ZMK module, see its README): the
+  e-paper shows the keymap's layers in a column with a dot at the active
+  one, nothing else, so only the dot moves between updates. It replaces
+  splitkb's status widget (artwork, layer name, battery gauge, BLE profile
+  circles), which is written for the wireless board and does not compile
+  without Bluetooth and a battery anyway (`widgets/status.c` calls
+  `zmk_ble_*` and `zmk_battery_state_of_charge` and uses
+  `CONFIG_BT_MAX_PAIRED` unguarded); `CONFIG_HALCYON_EPAPER_WIDGET_STATUS=n`
+  in `config/halcyon_ferris_left_halcyon_wired.conf` switches it off. (ZMK's
+  built-in status screen is no alternative: the panel is mounted rotated,
+  splitkb's widgets rotate their canvases, the built-in one draws sideways.)
+  The shield's driver and LVGL setup are kept;
+- in-repo modules passed to the wired build: `pinnacle-tune` and
+  `epaper-layers` (no `xy-pack`).
 
 **Measured (four captures, ~25 000 packets):** every packet the right half
 produced reached the dongle, no queue ever filled, no drop, no stack came

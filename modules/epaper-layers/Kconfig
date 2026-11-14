@@ -1,0 +1,21 @@
+config ZMK_EPAPER_LAYERS
+    bool "Halcyon e-paper status screen: the keymap's layers, a dot at the active one"
+    depends on ZMK_DISPLAY && ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+    select LV_USE_CANVAS
+    select LV_FONT_MONTSERRAT_14
+    help
+      Provides zmk_display_status_screen() for the e-paper of splitkb's
+      mod_display_epaper shield: every layer of the keymap in a column, in
+      index order, with a dot in front of the one that is active (the highest
+      one, as ZMK's own layer widget reports it). Only that dot moves between
+      updates. Needs a part that knows the layers (a central), and splitkb's
+      own status widget switched off (CONFIG_HALCYON_EPAPER_WIDGET_STATUS=n),
+      since both define zmk_display_status_screen().
+
+if ZMK_EPAPER_LAYERS
+
+config ZMK_EPAPER_LAYERS_INVERTED
+    bool "White on black"
+
+endif # ZMK_EPAPER_LAYERS
