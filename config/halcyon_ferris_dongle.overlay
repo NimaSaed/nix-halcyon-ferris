@@ -7,7 +7,7 @@
  *
  * - &zip_xy_unpack (in-repo module, modules/xy-pack) must be the first
  *   processor of every chain: the right half sends each packet as one
- *   packed event (halcyon_ferris_right.overlay, &zip_xy_pack) and this
+ *   packed event (halcyon_ferris_right_halcyon_wireless.overlay, &zip_xy_pack) and this
  *   restores REL_X / REL_Y for the processors after it. Flash both parts
  *   together; without the pack on the right half it does nothing.
  * - Cursor speed: `&zip_xy_scaler <mul> <div>` multiplies every packet

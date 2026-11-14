@@ -35,16 +35,16 @@ Differences from the stock images:
 - `CONFIG_ZMK_POINTING` / `CONFIG_ZMK_POINTING_SMOOTH_SCROLLING` enabled on
   all parts (`config/halcyon_ferris.conf`) for the keymap's mouse keys; the
   Cirque shields already imply both on the dongle and the right half;
-- `config/halcyon_ferris_left.conf` makes the left half a peripheral, which
-  splitkb does with a cmake argument;
+- `config/halcyon_ferris_left_halcyon_wireless.conf` makes the left half a
+  peripheral, which splitkb does with a cmake argument;
 - the dependency pins in `config/west.yml` (splitkb builds from the moving
   `main+halcyon-fixes` branch).
-- `config/halcyon_ferris_right.overlay`: the touchpad's taps are turned off
+- `config/halcyon_ferris_right_halcyon_wireless.overlay`: the touchpad's taps are turned off
   (the chip's tap-to-click comes with a tap-and-drag gesture that misfires
   on short strokes); click and drag with the MB1/MB2/MB3 keys on the Mouse
   layer; this also makes a packet two input events instead of three;
 - `modules/xy-pack/` (in-repo ZMK module, see its README): `&zip_xy_pack`
-  runs on the right half (`config/halcyon_ferris_right.overlay`, in the
+  runs on the right half (`config/halcyon_ferris_right_halcyon_wireless.overlay`, in the
   `zmk,input-split` node) and folds a packet's `REL_X`/`REL_Y` into one
   event, so the radio carries one notification per packet (100/s at most)
   instead of two, and packets without movement are not sent at all;
@@ -54,7 +54,7 @@ Differences from the stock images:
 - `modules/pinnacle-tune/` (in-repo ZMK module, see its README): one-shot
   writes to Cirque registers the Zephyr driver does not expose, after its
   init: edge sensitivity and the chip's compensation / feature bits, all as
-  `CONFIG_PINNACLE_TUNE_*` in `config/halcyon_ferris_right.conf`;
+  `CONFIG_PINNACLE_TUNE_*` in `config/halcyon_ferris_right_halcyon_wireless.conf`;
 - `config/halcyon_ferris_dongle.conf`: `CONFIG_BT_CTLR_CENTRAL_SPACING=3000`
   places the two halves' connection events 3 ms apart instead of ~1 ms, so
   each half gets at least 3 ms per 7.5 ms interval whichever connected
@@ -70,8 +70,8 @@ Differences from the stock images:
   does not engage within 300 ms of a keystroke, and any other key ends it;
 - holding S on the Mouse layer (a momentary Scroll layer, 5) makes pad
   motion scroll instead of moving the cursor;
-- `config/halcyon_ferris_dongle.conf` and `config/halcyon_ferris_right.conf`:
-  larger BLE receive/transmit buffers and event queues, so a burst after a
+- `config/halcyon_ferris_dongle.conf` and
+  `config/halcyon_ferris_right_halcyon_wireless.conf`: larger BLE receive/transmit buffers and event queues, so a burst after a
   stalled connection event is absorbed rather than dropped (the stock
   dongle acknowledged one packet per connection event and queued it in a
   5-entry queue that drops silently). The right half's send queue is back
@@ -97,7 +97,7 @@ trace:** in the first ~100 ms after the finger lands the chip reports a hump
 of upward motion (45-55 counts, up to 104 on a firm landing; x2 scaler =
 90-200 px) before the stroke starts, with a small wrong-way X kick on about
 a third of landings. `&zip_xy_pack`'s landing filter
-(`config/halcyon_ferris_right.overlay`, documented in
+(`config/halcyon_ferris_right_halcyon_wireless.overlay`, documented in
 `modules/xy-pack/README.md`) limits the upward component of the first 8
 packets of every stroke to 1 count, then pays the withheld motion back when
 the shape says it was a real upward stroke rather than a hump (still rising
@@ -109,7 +109,7 @@ chip's own NERD / track-error / palm-error compensation reacting to a
 contact half off the sensor by shifting its baseline, which then makes a
 normal finger marginal for a few seconds. `modules/pinnacle-tune/` writes
 the registers Zephyr's driver does not expose, once after the driver's init
-(`config/halcyon_ferris_right.conf`, `CONFIG_PINNACLE_TUNE_*`): those three
+(`config/halcyon_ferris_right_halcyon_wireless.conf`, `CONFIG_PINNACLE_TUNE_*`): those three
 compensations off (CalConfig1 0x3e -> 0x12, background and tap compensation
 kept), and the edge-sensitivity registers at Cirque's curved-overlay values
 (0x04 / 0x03). Measured: the after-rim effect no longer reproduces and
@@ -125,7 +125,8 @@ battery (floating ground) run is the next check.
 ## Getting logs (diagnosing a choke)
 
 The `CONFIG_ZMK_USB_LOGGING` blocks at the end of
-`config/halcyon_ferris_{dongle,right,left}.conf` are currently **on** (the
+`config/halcyon_ferris_dongle.conf` and
+`config/halcyon_ferris_{right,left}_halcyon_wireless.conf` are currently **on** (the
 investigation is still open); comment them out when done (8 KB of RAM for
 the log buffer and an extra USB serial port per part). ZMK itself logs at
 WRN; Zephyr's thread analyzer prints every thread's stack high-water mark

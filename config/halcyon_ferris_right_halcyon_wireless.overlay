@@ -1,5 +1,7 @@
 /*
- * Right-half-only devicetree overlay (the half with the Cirque touchpad).
+ * Right-half devicetree overlay, wireless board only (the half with the
+ * Cirque touchpad). ZMK takes <shield>_<board>.overlay over <shield>.overlay,
+ * so the wired build gets halcyon_ferris_right_halcyon_wired.overlay instead.
  *
  * Taps off: the chip's tap-to-click also brings its tap-and-drag gesture,
  * which turned short strokes into clicks and drags. With taps disabled the
@@ -51,7 +53,7 @@
     input-processors = <&zip_xy_pack>;
 };
 
-/* USB serial console for CONFIG_ZMK_USB_LOGGING (see halcyon_ferris_right.conf);
+/* USB serial console for CONFIG_ZMK_USB_LOGGING (see halcyon_ferris_right_halcyon_wireless.conf);
  * the halcyon_wireless board does not define one. Harmless when logging is off. */
 / {
     chosen {

@@ -30,7 +30,8 @@
 
         # Three parts: the dongle is the central (USB/BT host), both halves are
         # peripherals. The left half additionally needs CONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
-        # (see config/halcyon_ferris_left.conf) since the shield defaults it to central.
+        # (see config/halcyon_ferris_left_halcyon_wireless.conf) since the shield
+        # defaults it to central.
         parts = [ "dongle" "left" "right" ];
         centralPart = "dongle";
 
