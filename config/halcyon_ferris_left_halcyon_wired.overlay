@@ -2,8 +2,8 @@
  * Left-half devicetree overlay, wired board only (halcyon_wired, RP2040).
  *
  * On the wired keyboard there is no dongle: the left half is the central
- * (USB host side, ZMK Studio), the right half is the peripheral on the TRRS
- * UART (the zmk,wired-split node and the RGB strip come from
+ * (USB host side, ZMK Studio), the right half is the peripheral on the UART
+ * that runs over the USB-C cable between the halves (the zmk,wired-split node and the RGB strip come from
  * halcyon_wired.dtsi, see there). The right half forwards its Cirque touchpad
  * events over that UART and the mod_cirque_central shield enables
  * &trackpad_listener here, so this file does for the wired left half what

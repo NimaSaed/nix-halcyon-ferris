@@ -71,7 +71,8 @@
 
       # The same keyboard with splitkb's wired (RP2040) controllers: no dongle,
       # the left half is the central (USB, ZMK Studio) and the right half the
-      # peripheral over the TRRS UART; e-paper on the left, Cirque on the
+      # peripheral over the UART on the USB-C cable between the halves;
+      # e-paper on the left, Cirque on the
       # right, as on the wireless one. Same config/ directory: the keymap and
       # halcyon_ferris.conf are shared, and ZMK loads <shield>_<board>.{conf,
       # overlay} (halcyon_wired vs halcyon_wireless) for what differs.

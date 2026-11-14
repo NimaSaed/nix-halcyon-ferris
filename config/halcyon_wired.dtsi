@@ -15,7 +15,8 @@
  * side, boards/halcyon_wired.conf, is repeated in halcyon_wired.conf).
  * Drop this file once splitkb renames theirs.
  *
- * - halcyon_serial (uart0, GPIO 28/29 -> TRRS) is the split link, full
+ * - halcyon_serial (uart0, GPIO 28/29 -> the USB-C interconnect) is the
+ *   split link, full
  *   duplex, at splitkb's 921600 baud ("comment out for slower speeds if
  *   encountering issues", i.e. Zephyr's 115200 default from the board dts).
  * - The WS2812 strip is driven by PIO0 on halcyon_conn 25 (GPIO 3), 23 LEDs

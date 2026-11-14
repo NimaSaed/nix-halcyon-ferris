@@ -1,7 +1,7 @@
 /*
  * Right-half devicetree overlay, wired board only (halcyon_wired, RP2040):
  * the peripheral with the Cirque touchpad, connected to the left half over
- * the TRRS UART (the zmk,wired-split node and the RGB strip come from
+ * the UART on the USB-C cable between the halves (the zmk,wired-split node and the RGB strip come from
  * halcyon_wired.dtsi, see there).
  *
  * The chip is set up exactly as on the wireless right half
