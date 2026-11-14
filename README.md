@@ -86,6 +86,71 @@ nix run .#flash dongle # flash only one part (dongle | left | right)
 git checkout main      # back to the tuned firmware
 ```
 
+## The wired copy (`firmware-wired`)
+
+The same keyboard built for splitkb's wired Halcyon controllers (RP2040,
+board `halcyon_wired//zmk`): e-paper on the left, Cirque on the right, the
+halves on a TRRS cable, no dongle and no batteries. Same `config/`
+directory, same keymap: ZMK looks for `<shield>_<board>.{conf,overlay}`
+next to `<shield>.*`, all matching `.conf` files are merged and the most
+specific `.overlay` wins, so everything board-specific sits in
+`*_halcyon_wireless.*` / `*_halcyon_wired.*` / `halcyon_wired.conf` and
+only `halcyon_ferris.keymap` and `halcyon_ferris.conf` are shared. (That is
+also why the wireless files carry the `_halcyon_wireless` suffix: a
+shield-named `halcyon_ferris_right.conf` would be merged into the wired
+build too, and its `CONFIG_BT_*` lines would abort it, Zephyr treats
+assignments to unavailable symbols as errors.)
+
+| Part  | Board                | Shields                                                                | Role                              |
+| ----- | -------------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| left  | `halcyon_wired//zmk` | `halcyon_ferris_left mod_display_epaper_forest mod_cirque_central`     | central, USB, ZMK Studio          |
+| right | `halcyon_wired//zmk` | `halcyon_ferris_right mod_cirque_hw_right`                             | peripheral over the TRRS UART     |
+
+```sh
+nix build .#firmware-wired -o result-wired   # -> result-wired/zmk_{left,right}.uf2
+nix run .#flash-wired                        # RP2040 bootloader: double-tap reset (or hold BOOT while plugging in)
+nix run .#flash-wired right
+```
+
+Never plug or unplug the TRRS cable while either half is on USB (ZMK's own
+warning: it can kill the controllers).
+
+What differs from the wireless build, and why:
+
+- `config/halcyon_wired.dtsi` (included by both wired overlays) and the RGB
+  block in `config/halcyon_wired.conf` are splitkb's own
+  `boards/shields/halcyon_ferris/boards/halcyon_wired.{overlay,conf}`,
+  copied: Zephyr never applies those files for the `halcyon_wired//zmk`
+  target (it looks for `halcyon_wired_rp2040_zmk.*` or `halcyon_wired_zmk.*`;
+  splitkb's build matrix has no wired entries yet, `# TODO: Handle wired
+  controller` in their generator), so without the copy there is no
+  `zmk,wired-split` node, the wired transport is not even compiled, and the
+  halves build fine but never talk. Drop the copies once splitkb renames
+  their files. Deliberate changes in the copy: the underglow starts
+  **off** (`CONFIG_ZMK_RGB_UNDERGLOW_ON_START=n`, splitkb has it on), like
+  the wireless halves, and is a solid light blue when turned on (hue 200,
+  saturation 60; ZMK's default is red); note that a toggle or colour change
+  is only saved to flash 60 s after the last change, and these halves lose
+  power when unplugged;
+- `config/halcyon_ferris_left_halcyon_wired.overlay` is the dongle overlay
+  minus `&zip_xy_unpack` (the touchpad's processors: scaler, auto Mouse
+  layer, Scroll layer); `config/halcyon_ferris_right_halcyon_wired.overlay`
+  is the wireless right overlay minus `&zip_xy_pack` and the USB console:
+  the UART carries every event as is, so there is nothing to pack, and
+  `uart0` *is* the split link, so no logging is enabled on the wired build;
+- `config/halcyon_ferris_right_halcyon_wired.conf` repeats the
+  `CONFIG_PINNACLE_TUNE_*` block (same pad, same values); none of the BLE
+  buffer tuning applies;
+- `config/halcyon_ferris_left_halcyon_wired.conf`: ZMK's built-in status
+  screen on the e-paper (layer name, words per minute) for now, because
+  splitkb's widget (artwork, battery gauge, BLE profile circles) is written
+  for the wireless board and does not compile without Bluetooth and a
+  battery (`widgets/status.c` calls `zmk_ble_*` and
+  `zmk_battery_state_of_charge` and uses `CONFIG_BT_MAX_PAIRED` unguarded).
+  Known flaw: the panel is mounted a quarter turn off and the built-in
+  screen does not know, so its text runs sideways;
+- in-repo modules: only `pinnacle-tune` is passed to the wired build.
+
 **Measured (four captures, ~25 000 packets):** every packet the right half
 produced reached the dongle, no queue ever filled, no drop, no stack came
 near its limit, and the gaps the dongle saw were the gaps the chip produced,

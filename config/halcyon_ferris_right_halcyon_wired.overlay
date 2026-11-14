@@ -1,0 +1,25 @@
+/*
+ * Right-half devicetree overlay, wired board only (halcyon_wired, RP2040):
+ * the peripheral with the Cirque touchpad, connected to the left half over
+ * the TRRS UART (the zmk,wired-split node and the RGB strip come from
+ * halcyon_wired.dtsi, see there).
+ *
+ * The chip is set up exactly as on the wireless right half
+ * (halcyon_ferris_right_halcyon_wireless.overlay, see there for the why):
+ * taps off (the chip's tap-to-click brings a tap-and-drag gesture that
+ * misfires on short strokes; click and drag with the MB1/MB2/MB3 keys on the
+ * Mouse layer) and "1x" sensitivity (the chip's most sensitive ADC
+ * attenuation; go back to splitkb's "2x" if the cursor reacts to a hovering
+ * finger or the palm).
+ *
+ * What is *not* here, on purpose: &zip_xy_pack. It exists to halve the
+ * number of BLE notifications per packet; over the UART every event goes out
+ * as is and the left half's listener consumes it directly.
+ */
+
+#include "halcyon_wired.dtsi"
+
+&trackpad {
+    /delete-property/ primary-tap-enable;
+    sensitivity = "1x";
+};

@@ -13,13 +13,21 @@
   outputs = { self, nixpkgs, zmk-nix }: let
     forAllSystems = nixpkgs.lib.genAttrs (nixpkgs.lib.attrNames zmk-nix.packages);
   in {
-    packages = forAllSystems (system: rec {
+    packages = forAllSystems (system: let
+      # Shared by both keyboards: config/ (keymap, west.yml, the per-board
+      # .conf/.overlay files) and the in-repo modules.
+      src = nixpkgs.lib.sourceFilesBySuffices self [ ".board" ".cmake" ".conf" ".defconfig" ".dts" ".dtsi" ".json" ".keymap" ".overlay" ".shield" ".yml" "_defconfig" ".c" ".h" ".yaml" "CMakeLists.txt" "Kconfig" ];
+
+      # Hash of the west workspace (config/west.yml); `nix run .#update` after
+      # changing the pins there.
+      zephyrDepsHash = "sha256-79OugfKZjMurv5Mq7s0dUypYI8z7Z4q8bWG6WNSBE84=";
+    in rec {
       default = firmware;
 
-      firmware = zmk-nix.legacyPackages.${system}.buildSplitKeyboard rec {
+      firmware = zmk-nix.legacyPackages.${system}.buildSplitKeyboard {
         name = "firmware";
 
-        src = nixpkgs.lib.sourceFilesBySuffices self [ ".board" ".cmake" ".conf" ".defconfig" ".dts" ".dtsi" ".json" ".keymap" ".overlay" ".shield" ".yml" "_defconfig" ".c" ".h" ".yaml" "CMakeLists.txt" "Kconfig" ];
+        inherit src zephyrDepsHash;
 
         # In-repo ZMK modules (modules/<name>, each a Zephyr module with its own
         # zephyr/module.yml). xy-pack: the &zip_xy_pack / &zip_xy_unpack input
@@ -54,8 +62,6 @@
           right  = "halcyon_ferris_right mod_battery_coincell mod_cirque_hw_right";
         };
 
-        zephyrDepsHash = "sha256-79OugfKZjMurv5Mq7s0dUypYI8z7Z4q8bWG6WNSBE84=";
-
         meta = {
           description = "ZMK firmware for the Halcyon Ferris";
           license = nixpkgs.lib.licenses.mit;
@@ -63,7 +69,81 @@
         };
       };
 
+      # The same keyboard with splitkb's wired (RP2040) controllers: no dongle,
+      # the left half is the central (USB, ZMK Studio) and the right half the
+      # peripheral over the TRRS UART; e-paper on the left, Cirque on the
+      # right, as on the wireless one. Same config/ directory: the keymap and
+      # halcyon_ferris.conf are shared, and ZMK loads <shield>_<board>.{conf,
+      # overlay} (halcyon_wired vs halcyon_wireless) for what differs.
+      firmware-wired = zmk-nix.legacyPackages.${system}.buildSplitKeyboard {
+        name = "firmware-wired";
+
+        inherit src zephyrDepsHash;
+        inherit (firmware) westDeps;   # same west.yml, reuse the fetched deps
+
+        # pinnacle-tune only: xy-pack exists to save BLE notifications and the
+        # wired split does not need it.
+        extraCmakeFlags = [ "-DZMK_EXTRA_MODULES=${src}/modules/pinnacle-tune" ];
+
+        parts = [ "left" "right" ];
+        centralPart = "left";
+
+        # ZMK Studio over USB on the central, i.e. the left half.
+        enableZmkStudio = true;
+
+        board = "halcyon_wired//zmk";
+
+        # No battery boards on the wired controllers. mod_cirque_central on the
+        # left is the receiving end of the right half's touchpad (as on the
+        # dongle); see config/halcyon_ferris_left_halcyon_wired.overlay.
+        shield = {
+          left  = "halcyon_ferris_left mod_display_epaper_forest mod_cirque_central";
+          right = "halcyon_ferris_right mod_cirque_hw_right";
+        };
+
+        meta = firmware.meta // {
+          description = "ZMK firmware for the Halcyon Ferris, wired controllers";
+        };
+      };
+
+      # ZMK's settings_reset shield for the wired controllers: flash it to a
+      # half, let it boot once (it wipes the saved settings: RGB state, Studio
+      # keymap edits, ...), then flash the real firmware again. Needed because
+      # a saved RGB state always wins over the *_START defaults in
+      # config/halcyon_wired.conf. One image, works for either half.
+      settings-reset-wired = zmk-nix.legacyPackages.${system}.buildKeyboard {
+        name = "settings-reset-wired";
+        inherit src zephyrDepsHash;
+        inherit (firmware) westDeps;
+        board = "halcyon_wired//zmk";
+        shield = "settings_reset";
+        # config/halcyon_wired.conf (loaded for every build on this board)
+        # enables the underglow, but the strip's devicetree is in the per-half
+        # overlays, which this shield does not get.
+        extraCmakeFlags = [ "-DCONFIG_ZMK_RGB_UNDERGLOW=n" ];
+        meta = firmware.meta // {
+          description = "Settings reset image for the wired Halcyon controllers";
+        };
+      };
+
       flash = zmk-nix.packages.${system}.flash.override { inherit firmware; };
+
+      # zmk-nix's flasher looks for a SCSI disk whose model is "nRF UF2" and
+      # mounts that disk: the nRF bootloader puts its FAT straight on the
+      # device. The RP2040 bootloader (model "RP2") has a partition table
+      # instead, the FAT is on /dev/sdX1, so mounting the disk fails forever.
+      # Patch the detection to find the partition by its filesystem label.
+      flash-wired = let
+        pkgs = nixpkgs.legacyPackages.${system};
+        nrf = zmk-nix.packages.${system}.flash.override { firmware = firmware-wired; };
+      in pkgs.runCommand "zmk-uf2-flash" { meta.mainProgram = "zmk-uf2-flash"; } ''
+        mkdir -p $out/bin
+        sed "s#lsblk -Sno path,model | grep -F 'nRF UF2'#lsblk -lno path,label | grep -Fw 'RPI-RP2'#" \
+          ${nrf}/bin/zmk-uf2-flash > $out/bin/zmk-uf2-flash
+        grep -q "RPI-RP2" $out/bin/zmk-uf2-flash   # fail the build if zmk-nix changed the line
+        chmod +x $out/bin/zmk-uf2-flash
+      '';
+
       update = zmk-nix.packages.${system}.update;
     });
 

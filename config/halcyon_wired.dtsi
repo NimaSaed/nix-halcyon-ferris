@@ -1,0 +1,71 @@
+/*
+ * Devicetree shared by both halves of the wired build, included from
+ * halcyon_ferris_{left,right}_halcyon_wired.overlay. (Not an .overlay on
+ * purpose: ZMK applies only the first matching overlay per part, and the
+ * per-half one wins.)
+ *
+ * This is splitkb's boards/shields/halcyon_ferris/boards/halcyon_wired.overlay
+ * (zmk-halcyon-module, pinned in west.yml), which Zephyr never applies: for
+ * the halcyon_wired//zmk board target it looks for
+ * halcyon_wired_rp2040_zmk.overlay or halcyon_wired_zmk.overlay in the
+ * shield's boards/ directory (cmake/modules/extensions.cmake,
+ * zephyr_build_string), not halcyon_wired.overlay. Without it there is no
+ * zmk,wired-split node, CONFIG_ZMK_SPLIT_WIRED stays off, and the two halves
+ * build fine but never talk. The RGB strip is the same story (its Kconfig
+ * side, boards/halcyon_wired.conf, is repeated in halcyon_wired.conf).
+ * Drop this file once splitkb renames theirs.
+ *
+ * - halcyon_serial (uart0, GPIO 28/29 -> TRRS) is the split link, full
+ *   duplex, at splitkb's 921600 baud ("comment out for slower speeds if
+ *   encountering issues", i.e. Zephyr's 115200 default from the board dts).
+ * - The WS2812 strip is driven by PIO0 on halcyon_conn 25 (GPIO 3), 23 LEDs
+ *   per half on the Ferris.
+ */
+
+#include <dt-bindings/led/led.h>
+
+&halcyon_serial {
+    current-speed = <921600>;
+};
+
+/ {
+    chosen {
+        zmk,underglow = &led_strip;
+    };
+
+    split_config {
+        compatible = "zmk,wired-split";
+        device = <&halcyon_serial>;
+    };
+};
+
+&pinctrl {
+    ws2812_pio_default: ws2812_pio_default {
+        group1 {
+            pinmux = <PIO0_P3>;
+        };
+    };
+};
+
+&pio0 {
+    status = "okay";
+
+    pio-ws2812 {
+        compatible = "worldsemi,ws2812-rpi_pico-pio";
+        status = "okay";
+        pinctrl-0 = <&ws2812_pio_default>;
+        pinctrl-names = "default";
+        bit-waveform = <3>, <3>, <4>;
+
+        led_strip: led_strip {
+            status = "okay";
+            gpios = <&halcyon_conn 25 GPIO_ACTIVE_HIGH>; /* WS2812 data line */
+            chain-length = <23>;                        /* LEDs per half */
+            color-mapping = <LED_COLOR_ID_GREEN
+                             LED_COLOR_ID_RED
+                             LED_COLOR_ID_BLUE>;
+            reset-delay = <280>;
+            frequency = <800000>;
+        };
+    };
+};

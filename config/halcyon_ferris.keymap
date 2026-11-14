@@ -8,6 +8,11 @@
  * Hardware: Halcyon wireless controllers, coin cell battery boards,
  * e-paper display module on the left half, Cirque touchpad on the right half.
  * The touchpad works on every layer as a mouse automatically.
+ * The wired copy (flake output `firmware-wired`, RP2040 controllers, same
+ * modules, no dongle) builds from this same file: ZMK picks it by shield
+ * name, so the two keyboards cannot drift apart.
+ * (&studio_unlock works on whichever part is the central: the dongle on
+ * the wireless build, the left half on the wired one.)
  *
  * Position reference (34 keys + 10 Halcyon module slots at the end):
  *

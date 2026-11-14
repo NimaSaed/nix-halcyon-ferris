@@ -1,0 +1,46 @@
+/*
+ * Left-half devicetree overlay, wired board only (halcyon_wired, RP2040).
+ *
+ * On the wired keyboard there is no dongle: the left half is the central
+ * (USB host side, ZMK Studio), the right half is the peripheral on the TRRS
+ * UART (the zmk,wired-split node and the RGB strip come from
+ * halcyon_wired.dtsi, see there). The right half forwards its Cirque touchpad
+ * events over that UART and the mod_cirque_central shield enables
+ * &trackpad_listener here, so this file does for the wired left half what
+ * halcyon_ferris_dongle.overlay does for the dongle; keep the two in step.
+ *
+ * Differences from the dongle overlay:
+ * - no &zip_xy_unpack: the wired split sends every input event over the
+ *   UART as is (there is no radio to save), so the right half does not pack
+ *   and nothing needs unpacking;
+ * - no USB console: on this board uart0 *is* the split link, so the console
+ *   must never be pointed at it, and USB logging is not enabled on the wired
+ *   build at all.
+ *
+ * Processors (see halcyon_ferris_dongle.overlay for the full description):
+ * - `&zip_xy_scaler 2 1`: cursor movement doubled;
+ * - `&zip_temp_layer 4 600`: Mouse layer on while the pad is moved, off
+ *   600 ms after the last movement, not within 300 ms of a keystroke, and
+ *   any key other than D F G / E R / S / V B ends it at once;
+ * - scroller: while the Scroll layer (5, held via S on the Mouse layer) is
+ *   active, pad motion becomes wheel events; process-next keeps the base
+ *   chain (and so the auto layer) running too.
+ */
+
+#include "halcyon_wired.dtsi"
+#include <input/processors.dtsi>
+
+&zip_temp_layer {
+    require-prior-idle-ms = <300>;           /* not while typing */
+    excluded-positions = <12 13 14 2 3 11 23 24>;  /* D F G (buttons), E R (scroll), S (pad scroll), V B (fwd/back) */
+};
+
+&trackpad_listener {
+    input-processors = <&zip_xy_scaler 2 1 &zip_temp_layer 4 600>;
+
+    scroller {
+        layers = <5>;
+        input-processors = <&zip_xy_to_scroll_mapper>;
+        process-next;
+    };
+};
