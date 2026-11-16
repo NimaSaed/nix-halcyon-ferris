@@ -56,7 +56,8 @@ Additions not in the Oryx layout:
 - Func layer: `Q` → ZMK Studio unlock (works on whichever part is the
   central: the dongle, or the wired left half), `E`/`R` → previous/next
   underglow effect, `T` → underglow toggle, `Y`/`U` → underglow colour (hue)
-  down/up, `V`/`B` → underglow brightness down/up;
+  down/up, `V`/`B` → underglow brightness down/up, `N`/`M` → underglow
+  saturation down/up (paler/stronger; was a second F11/F12, still on `Z`/`X`);
 - Mouse layer: `D`/`F`/`G` → middle/left/right mouse button, `E`/`R` →
   wheel up/down, `S` (hold) → the touchpad scrolls, `V`/`B` → browser
   forward/back, right hand → cursor and wheel keys; wheel keys (here and

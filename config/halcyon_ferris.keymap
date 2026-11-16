@@ -230,15 +230,16 @@ HLC_TRANS
 // -----------------------------------------------------------------------------
 // | STUDIO |       |RGB EFR |RGB EFF | RGB TOG|   |RGB HUD |RGB HUI |        |       |        |
 // | SHFT/F1|  F2   | ALT/F3 | GUI/F4 | CTL/F5 |   | CTL/F6 | GUI/F7 | ALT/F8 |  F9   |SHFT/F10|
-// |  F11   |  F12  |        |  RGB-  |  RGB+  |   |  F11   |  F12   |        |       |        |
+// |  F11   |  F12  |        |  RGB-  |  RGB+  |   |RGB SAD |RGB SAI |        |       |        |
 //                           |        |        |   |        |        |
 // STUDIO = &studio_unlock (not in the Oryx layout; needed to edit via zmk.studio)
 // RGB TOG = underglow on/off, RGB EFR/EFF = previous/next effect,
-// RGB HUD/HUI = colour (hue) down/up (not in the Oryx layout)
+// RGB HUD/HUI = colour (hue) down/up, RGB SAD/SAI = saturation down/up
+// (paler/stronger; replaces Oryx's second F11/F12, still on Z/X)
             bindings = <
 &studio_unlock &none   &rgb_ug RGB_EFR &rgb_ug RGB_EFF &rgb_ug RGB_TOG   &rgb_ug RGB_HUD &rgb_ug RGB_HUI &none    &none   &none
 &hml LSHFT F1  &kp F2  &hml LALT F3  &hml LGUI F4     &hml LCTRL F5      &hmr RCTRL F6  &hmr RGUI F7  &hmr RALT F8  &kp F9  &hmr RSHFT F10
-&kp F11       &kp F12  &none        &rgb_ug RGB_BRD  &rgb_ug RGB_BRI    &kp F11       &kp F12      &none        &none   &none
+&kp F11       &kp F12  &none        &rgb_ug RGB_BRD  &rgb_ug RGB_BRI    &rgb_ug RGB_SAD &rgb_ug RGB_SAI &none     &none   &none
                                       &trans        &trans           &trans        &trans
 HLC_TRANS
             >;
