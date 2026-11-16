@@ -53,6 +53,7 @@
 // gives Down immediately instead of " j" during the first 200 ms.
 // Thumbs don't roll with letters, so this doesn't cause misfires.
 // Tap-then-hold within quick-tap-ms still auto-repeats Space / Backspace.
+// The Mouse thumb uses &ltl (same timing, defined below) instead of &lt.
 &lt {
     flavor = "balanced";
     tapping-term-ms = <200>;
@@ -86,6 +87,33 @@
     //    past tapping-term-ms still gives the mod for deliberate same-hand use.
     //  - hold-trigger-on-release: lets you stack mods on one hand (Ctrl+Shift).
     behaviors {
+        // Mouse thumb. The touchpad's auto Mouse layer (&zip_temp_layer in
+        // the dongle / wired-left overlays) also targets layer 4 and, since
+        // layer state is a plain bitmask, cannot tell that the thumb is
+        // holding it: the first pad movement makes it adopt the layer and
+        // its timeout then switches it off under the thumb (600 ms after the
+        // last movement, so e.g. after a pad scroll the S release landed on
+        // Base, and a paused drag typed letters). &mol holds the layer
+        // *locked*: ZMK ignores a non-locking deactivate (the processor's
+        // timeout and its "other key ends it" rule) on a locked layer, and
+        // the thumb's own release clears the lock again. The processor sees
+        // that release as a layer change and resets itself, so nothing
+        // sticks; the auto layer still works on its own as before.
+        mol: momentary_layer_locking {
+            compatible = "zmk,behavior-momentary-layer";
+            #binding-cells = <1>;
+            locking;
+        };
+
+        ltl: layer_tap_locking {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <200>;
+            quick-tap-ms = <175>;
+            bindings = <&mol>, <&kp>;
+        };
+
         hml: home_row_mod_left {
             compatible = "zmk,behavior-hold-tap";
             #binding-cells = <2>;
@@ -160,7 +188,7 @@
 &kp Q         &kp W  &kp E        &kp R        &kp T           &kp Y         &kp U        &kp I        &kp O   &kp P
 &hml LSHFT A  &kp S  &hml LALT D  &hml LGUI F  &hml LCTRL G    &hmr RCTRL H  &hmr RGUI J  &hmr RALT K  &kp L   &hmr RSHFT SEMI
 &kp Z         &kp X  &kp C        &kp V        &kp B           &kp N         &kp M        &kp COMMA    &kp DOT &kp FSLH
-                            &lt NAV SPACE  &lt FUNC ENTER  &lt MOUSE ENTER  &lt NUMSYM BSPC
+                            &lt NAV SPACE  &lt FUNC ENTER  &ltl MOUSE ENTER  &lt NUMSYM BSPC
 HLC_NONE
             >;
         };

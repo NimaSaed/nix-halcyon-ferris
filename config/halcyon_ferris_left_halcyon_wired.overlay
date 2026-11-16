@@ -21,7 +21,8 @@
  * - `&zip_xy_scaler 2 1`: cursor movement doubled;
  * - `&zip_temp_layer 4 600`: Mouse layer on while the pad is moved, off
  *   600 ms after the last movement, not within 300 ms of a keystroke, and
- *   any key other than D F G / E R / S / V B ends it at once;
+ *   any key other than D F G / E R / S / V B ends it at once (neither applies
+ *   while the Mouse thumb holds the layer: &ltl in the keymap locks it);
  * - scroller: while the Scroll layer (5, held via S on the Mouse layer) is
  *   active, pad motion becomes wheel events; process-next keeps the base
  *   chain (and so the auto layer) running too.

@@ -18,7 +18,9 @@
  *   pad scroll and V/B are browser forward/back while the finger is on the
  *   pad. It does not engage within
  *   `require-prior-idle-ms` of a keystroke (typing), and any key press other
- *   than the ones in `excluded-positions` ends it at once.
+ *   than the ones in `excluded-positions` ends it at once. When the Mouse
+ *   thumb holds the layer it is locked (&ltl in the keymap), so neither the
+ *   timeout nor that rule can switch it off under the thumb.
  * - Scrolling by pad: while the Scroll layer (5, held via S on the Mouse
  *   layer) is active, pad motion becomes wheel events. `process-next` lets
  *   the base chain run too, so the auto layer stays alive while scrolling.

@@ -72,6 +72,11 @@ Tap/hold behaviour (see the top of the keymap):
   work instantly; same-hand rolls never produce modifiers.
 - Layer-taps on the thumbs are `balanced` (200 ms), so e.g. hold `Space` + tap
   `J` gives Down right away. Tap-then-hold within 175 ms repeats Space/Backspace.
+  The Mouse thumb is `&ltl`, the same layer-tap but holding the layer *locked*
+  (`&mo` with `locking`): the touchpad's auto Mouse layer targets the same
+  layer and would otherwise switch it off under the thumb 600 ms after the
+  last pad movement (its timeout is a non-locking deactivate, which ZMK
+  ignores on a locked layer).
 - The two `&mt` keys on the Nav layer (GUI/Ctrl on `F`/`G`) are `hold-preferred`.
 
 ## Touchpad
