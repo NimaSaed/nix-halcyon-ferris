@@ -215,6 +215,7 @@ assignments to unavailable symbols as errors.)
 nix build .#firmware-wired -o result-wired   # -> result-wired/zmk_{left,right}.uf2
 nix run .#flash-wired                        # RP2040 bootloader: double-tap reset (or hold BOOT while plugging in)
 nix run .#flash-wired right
+nix run .#settings-reset-wired left          # wipe a half's saved settings, then reflash it (see below)
 ```
 
 The cable between the halves carries the UART and the right half's power,
@@ -239,7 +240,15 @@ What differs from the wireless build, and why:
   the wireless halves, and is a solid light blue when turned on (hue 200,
   saturation 60; ZMK's default is red); note that a toggle or colour change
   is only saved to flash 60 s after the last change, and these halves lose
-  power when unplugged;
+  power when unplugged. The other way round, **once saved, the state
+  wins**: a half whose underglow was toggled on and left plugged in for a
+  minute comes back on at every boot from then on, and reflashing does not
+  change that (the UF2 only rewrites the code partition, the settings
+  partition stays). `nix run .#settings-reset-wired [left|right]` clears
+  it: it flashes ZMK's `settings_reset` image (`nix build
+  .#settings-reset-wired`) to the half, which erases the settings partition
+  as soon as it boots, then asks for the bootloader once more and flashes
+  the firmware back. ZMK Studio keymap edits saved on the half go with it;
 - `config/halcyon_ferris_left_halcyon_wired.overlay` is the dongle overlay
   minus `&zip_xy_unpack` (the touchpad's processors: scaler, auto Mouse
   layer, Scroll layer); `config/halcyon_ferris_right_halcyon_wired.overlay`
@@ -327,6 +336,7 @@ nix build              # -> result/zmk_{dongle,left,right}.uf2
 nix run .#flash        # double-tap reset on each part when prompted
 nix run .#flash dongle # flash only one part (dongle | left | right)
 nix build .#firmware-wired -o result-wired   # the wired copy, see above; nix run .#flash-wired [left|right]
+nix run .#settings-reset-wired [left|right]  # wired half: wipe saved settings (underglow state, Studio edits), reflash
 nix run .#update       # bump west deps (ZMK fork, halcyon module) + zephyrDepsHash
 nix develop            # shell with west/zephyr toolchain
 ```
